@@ -2,13 +2,20 @@ package sx.blah.discord.kotlin
 
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
+import sx.blah.discord.api.events.Event
 import sx.blah.discord.api.events.EventDispatcher
 import sx.blah.discord.handle.obj.*
+import sx.blah.discord.kotlin.extensions.on
 import sx.blah.discord.modules.ModuleLoader
 import sx.blah.discord.util.Image
 import java.time.LocalDateTime
 import java.util.*
 
+/**
+ * This allows for a quick and easy setup for creating a bot.
+ * 
+ * @param[closure] See [ClientFacade] for information regarding functions available.
+ */
 fun bot(closure: ClientFacade.() -> Unit) {
     closure(ClientFacade())
 }
@@ -23,7 +30,7 @@ class ClientFacade : IDiscordClient {
     /**
      * The real [IDiscordClient] instance (if it exists).
      */
-    var client: IDiscordClient? = null
+    var client: Lazy<IDiscordClient> = lazy { builder.login() }
     /**
      * The [DelegationEnvironment] instances which have registered for callbacks when the [client] instance is created.
      */
@@ -45,6 +52,17 @@ class ClientFacade : IDiscordClient {
      */
     private var _password: String? = null
 
+    /**
+     * This is used instead of the extension method due to the nature of [ClientFacade].
+     * 
+     * @see[IDiscordClient.on] 
+     */
+    fun <E : Event> on(callback: (event: E) -> Unit): Unit? = delegate {
+        clientOnly = true
+        client { client!!.on(callback) }
+    }
+        
+    
     /**
      * This sets the bot token for the client.
      * 
@@ -106,7 +124,7 @@ class ClientFacade : IDiscordClient {
      */
     private fun propagateClient() {
         toPropagate.forEach {
-            it.client = client
+            it.client = client.value
             it.onClientInit() 
         }
     }
@@ -115,7 +133,7 @@ class ClientFacade : IDiscordClient {
      * This runs a facade or original client method if possible dynamically at runtime.
      */
     private fun <OUT> delegate(closure: DelegationEnvironment<OUT>.() -> Unit) : OUT? {
-        val environment = DelegationEnvironment<OUT>(this, client)
+        val environment = DelegationEnvironment<OUT>(this, if (client.isInitialized()) client.value else null)
         closure(environment)
         return environment.returnVal
     }
@@ -126,18 +144,21 @@ class ClientFacade : IDiscordClient {
     }!!
     
 
-    override fun login(): Unit = delegate { 
-        client { client!!.login() }
-        facade { 
-            if (_token != null) {
-                builder.withToken(_token)
-            } else {
-                builder.withLogin(_email, _password)
+    override fun login(): Unit {
+        val facadeClient = this
+        delegate<Unit> {
+            client { client!!.login() }
+            facade {
+                if (_token != null) {
+                    builder.withToken(_token)
+                } else {
+                    builder.withLogin(_email, _password)
+                }
+                facadeClient.client.value //Initializes the client
+                propagateClient()
             }
-            client = builder.login() 
-            propagateClient()
         }
-    }!!
+    }
 
     override fun isBot(): Boolean = delegate {
         client { client!!.isBot }
@@ -154,10 +175,12 @@ class ClientFacade : IDiscordClient {
         facade { null }
     }
 
-    override fun changeEmail(email: String?): Unit = delegate {
-        clientOnly = true
-        client { client!!.changeEmail(email) }
-    }!!
+    override fun changeEmail(email: String?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changeEmail(email) }
+        }
+    }
 
     override fun getToken(): String? = delegate {
         client { client!!.token }
@@ -207,10 +230,12 @@ class ClientFacade : IDiscordClient {
         facade { null }
     }
 
-    override fun logout(): Unit = delegate { 
-        clientOnly = true
-        client { client!!.logout() }
-    }!!
+    override fun logout(): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.logout() }
+        }
+    }
 
     override fun getModuleLoader(): ModuleLoader? = delegate { 
         client { client!!.moduleLoader }
@@ -267,10 +292,12 @@ class ClientFacade : IDiscordClient {
         facade { 0 }
     }!!
 
-    override fun changeStatus(status: Status?): Unit = delegate {
-        clientOnly = true
-        client { client!!.changeStatus(status) }
-    }!!
+    override fun changeStatus(status: Status?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changeStatus(status) }
+        }
+    }
 
     override fun getVoiceChannelByID(id: String?): IVoiceChannel? = delegate { 
         client { client!!.getVoiceChannelByID(id) }
@@ -287,45 +314,58 @@ class ClientFacade : IDiscordClient {
         facade { null }
     }
 
-    override fun updatePresence(isIdle: Boolean, game: Optional<String>?): Unit = delegate { 
-        clientOnly = true
-        client { client!!.updatePresence(isIdle, game) }
-    }!!
+    override fun updatePresence(isIdle: Boolean, game: Optional<String>?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.updatePresence(isIdle, game) }
+        }
+    }
 
     override fun getGuilds(): MutableList<IGuild>? = delegate { 
         client { client!!.guilds }
         facade { mutableListOf() }
     }
 
-    override fun changeGameStatus(game: String?): Unit = delegate { 
-        clientOnly = true
-        client { client!!.changeGameStatus(game) }
-    }!!
+    override fun changeGameStatus(game: String?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changeGameStatus(game) }
+        }?: return
+    }
 
-    override fun changeAvatar(avatar: Image?): Unit = delegate { 
-        clientOnly = true
-        client { client!!.changeAvatar(avatar) }
-    }!!
+    override fun changeAvatar(avatar: Image?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changeAvatar(avatar) }
+        }
+    }
+    
 
-    override fun changePassword(password: String?): Unit = delegate { 
-        clientOnly = true
-        client { client!!.changePassword(password) }
-    }!!
+    override fun changePassword(password: String?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changePassword(password) }
+        }
+    }
 
     override fun getOurUser(): IUser? = delegate { 
         client { client!!.ourUser }
         facade { null }
     }
 
-    override fun changeUsername(username: String?): Unit = delegate { 
-        clientOnly = true
-        client { client!!.changeUsername(username) }
-    }!!
+    override fun changeUsername(username: String?): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changeUsername(username) }
+        }
+    }
 
-    override fun changePresence(isIdle: Boolean): Unit = delegate { 
-        clientOnly = true
-        client { client!!.changePresence(isIdle) }
-    }!!
+    override fun changePresence(isIdle: Boolean): Unit {
+        delegate<Unit> {
+            clientOnly = true
+            client { client!!.changePresence(isIdle) }
+        }
+    }
 
     /**
      * This class is used to create an easy flow for creating facade implementations of [IDiscordClient] methods.
@@ -374,7 +414,7 @@ class ClientFacade : IDiscordClient {
         }
 
         /**
-         * This registers a function as the "client-delegated" funciton.
+         * This registers a function as the "client-delegated" function.
          */
         fun client(function: () -> OUT?): Unit {
             _client = function
