@@ -2,10 +2,8 @@ package sx.blah.discord.kotlin
 
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
-import sx.blah.discord.api.events.Event
 import sx.blah.discord.api.events.EventDispatcher
 import sx.blah.discord.handle.obj.*
-import sx.blah.discord.kotlin.extensions.on
 import sx.blah.discord.modules.ModuleLoader
 import sx.blah.discord.util.Image
 import java.time.LocalDateTime
@@ -40,55 +38,13 @@ class ClientFacade : IDiscordClient {
      */
     private val builder = ClientBuilder()
     /**
-     * The token used.
-     */
-    private var _token: String? = null
-    /**
      * The email used.
       */
-    private var _email: String? = null
+    var email: String? = null
     /**
      * The password used.
      */
-    private var _password: String? = null
-
-    /**
-     * This is used instead of the extension method due to the nature of [ClientFacade].
-     * 
-     * @see[IDiscordClient.on] 
-     */
-    fun <E : Event> on(callback: (event: E) -> Unit): Unit? = delegate {
-        clientOnly = true
-        client { client!!.on(callback) }
-    }
-        
-    
-    /**
-     * This sets the bot token for the client.
-     * 
-     * @param[token] The token for this bot to use.
-     */
-    fun token(token: String) {
-        _token = token
-    }
-
-    /**
-     * This sets the email for the client.
-     * 
-     * @param[email] The email for this bot to use.
-     */
-    fun email(email: String) {
-        _email = email;
-    }
-
-    /**
-     * This sets the password for the client.
-     * 
-     * @param[password] The password for this bot to use.
-     */
-    fun password(password: String) {
-        _password = password
-    }
+    var password: String? = null
 
     /**
      * @see[ClientBuilder.withTimeout]
@@ -131,8 +87,10 @@ class ClientFacade : IDiscordClient {
 
     /**
      * This runs a facade or original client method if possible dynamically at runtime.
+     *
+     * @param[closure] The execution delegation init script.
      */
-    private fun <OUT> delegate(closure: DelegationEnvironment<OUT>.() -> Unit) : OUT? {
+    fun <OUT> delegate(closure: DelegationEnvironment<OUT>.() -> Unit) : OUT? {
         val environment = DelegationEnvironment<OUT>(this, if (client.isInitialized()) client.value else null)
         closure(environment)
         return environment.returnVal
@@ -149,10 +107,10 @@ class ClientFacade : IDiscordClient {
         delegate<Unit> {
             client { client!!.login() }
             facade {
-                if (_token != null) {
-                    builder.withToken(_token)
+                if (token != null) {
+                    builder.withToken(token)
                 } else {
-                    builder.withLogin(_email, _password)
+                    builder.withLogin(email, password)
                 }
                 facadeClient.client.value //Initializes the client
                 propagateClient()
@@ -182,9 +140,24 @@ class ClientFacade : IDiscordClient {
         }
     }
 
+    /**
+     * Gets the token used by this bot.
+     */
     override fun getToken(): String? = delegate {
         client { client!!.token }
         facade { token }
+    }
+
+    /**
+     * Sets the token used by this bot.
+     * @param[newToken] The new token.
+     */
+    fun setToken(newToken: String?): Unit? = delegate { 
+        facadeOnly = true
+        facade { 
+            token = newToken 
+            return@facade null
+        }
     }
 
     override fun getApplications(): MutableList<IApplication>? = delegate {
@@ -373,7 +346,7 @@ class ClientFacade : IDiscordClient {
      * @property[source] The facade instance this is associated with.
      * @property[client] The client instance the facade is associated with.
      */
-    private class DelegationEnvironment<OUT>(val source: ClientFacade, var client: IDiscordClient?) {
+    class DelegationEnvironment<OUT>(val source: ClientFacade, var client: IDiscordClient?) {
         private var _returnVal: OUT? = null
         private var _facade : () -> OUT? = { null }
         private var _client : () -> OUT? = { null }
