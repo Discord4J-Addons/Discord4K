@@ -40,10 +40,12 @@ class ClientFacade : IDiscordClient {
     /**
      * The email used.
       */
+    @Deprecated("Use tokens instead.", replaceWith = ReplaceWith("token"), level = DeprecationLevel.WARNING)
     var email: String? = null
     /**
      * The password used.
      */
+    @Deprecated("Use tokens instead.", replaceWith = ReplaceWith("token"), level = DeprecationLevel.WARNING)
     var password: String? = null
 
     /**
@@ -87,6 +89,7 @@ class ClientFacade : IDiscordClient {
 
     /**
      * This runs a facade or original client method if possible dynamically at runtime.
+     * **NOTE:** This was designed for internal use.
      *
      * @param[closure] The execution delegation init script.
      */
