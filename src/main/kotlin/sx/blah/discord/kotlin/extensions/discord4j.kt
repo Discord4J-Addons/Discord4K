@@ -4,6 +4,8 @@ import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.api.events.Event
 import sx.blah.discord.api.events.EventDispatcher
 import sx.blah.discord.api.events.IListener
+import sx.blah.discord.handle.impl.obj.*
+import sx.blah.discord.handle.obj.*
 import sx.blah.discord.kotlin.ClientFacade
 import sx.blah.discord.util.RequestBuffer
 
@@ -28,6 +30,55 @@ fun buffer(closure: () -> Unit) {
  */
 fun <T> buffer(closure: () -> T): RequestBuffer.RequestFuture<T> {
     return RequestBuffer.request(RequestBuffer.IRequest<T> { closure() })
+}
+
+/**
+ * This attempts to locate the specified type of [IDiscordObject] by its id.
+ * 
+ * @param[id] The id for the object.
+ * @return The object, or null if not found.
+ */
+inline fun <reified OBJECT : IDiscordObject<OBJECT>> IDiscordClient.find(id: String): OBJECT? {
+    when (OBJECT::class) {
+        IMessage::class, Message::class -> {
+            guilds.forEach { 
+                it.channels.forEach {
+                    val message = it.getMessageByID(id)
+                    if (message != null) 
+                        return@find it.getMessageByID(id) as? OBJECT 
+                } 
+            }
+        }
+        IUser::class, User::class -> {
+            return getUserByID(id) as? OBJECT
+        }
+        IGuild::class, Guild::class -> {
+            return getGuildByID(id) as? OBJECT
+        }
+        IVoiceChannel::class, VoiceChannel::class -> {
+            return getVoiceChannelByID(id) as? OBJECT
+        }
+        IPrivateChannel::class, PrivateChannel::class -> {
+            val user = getUserByID(id)
+            return if (user != null && user != ourUser) getOrCreatePMChannel(user) as? OBJECT else null
+        }
+        IChannel::class, Channel::class -> {
+            return getChannelByID(id) as? OBJECT
+        }
+        IRegion::class, Region::class -> {
+            return getRegionByID(id) as? OBJECT
+        }
+        IRole::class, Role::class -> {
+            guilds.forEach { 
+                val role = it.getRoleByID(id)
+                if (role != null)
+                    return@find role as? OBJECT
+            }
+        }
+        else -> throw RuntimeException("Cannot locate object of type ${OBJECT::class.simpleName}")
+    }
+    
+    return null
 }
 
 /**
