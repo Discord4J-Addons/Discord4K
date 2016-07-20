@@ -2,7 +2,7 @@ group 'sx.blah.discord.kotlin'
 version '1.0.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.0.2'
+    ext.kotlin_version = '1.0.3'
     
     repositories {
         mavenCentral()
@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    compile "com.github.austinv11:Discord4j:dev-SNAPSHOT"
+    compile "com.github.austinv11:Discord4j:2.5.1"
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 

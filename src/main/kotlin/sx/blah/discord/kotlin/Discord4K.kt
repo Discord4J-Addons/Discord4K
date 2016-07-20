@@ -14,7 +14,7 @@ class Discord4K : IModule {
 
     override fun getVersion() = "1.0.0-SNAPSHOT"
 
-    override fun getMinimumDiscord4JVersion() = "2.5.0-SNAPSHOT"
+    override fun getMinimumDiscord4JVersion() = "2.5.1"
 
     override fun getAuthor() = "austinv11"
 

@@ -47,7 +47,10 @@ class ClientFacade : IDiscordClient {
      */
     @Deprecated("Use tokens instead.", replaceWith = ReplaceWith("token"), level = DeprecationLevel.WARNING)
     var password: String? = null
-
+    /**
+     * The token used.
+     */
+    private var _token: String? = null
     /**
      * @see[ClientBuilder.withTimeout]
      */
@@ -148,7 +151,7 @@ class ClientFacade : IDiscordClient {
      */
     override fun getToken(): String? = delegate {
         client { client!!.token }
-        facade { token }
+        facade { _token }
     }
 
     /**
@@ -158,7 +161,7 @@ class ClientFacade : IDiscordClient {
     fun setToken(newToken: String?): Unit? = delegate { 
         facadeOnly = true
         facade { 
-            token = newToken 
+            _token = newToken 
             return@facade null
         }
     }
@@ -215,6 +218,21 @@ class ClientFacade : IDiscordClient {
 
     override fun getModuleLoader(): ModuleLoader? = delegate { 
         client { client!!.moduleLoader }
+        facade { null }
+    }
+
+    override fun getUsers(): MutableCollection<IUser>? = delegate {
+        client { client!!.users }
+        facade { mutableSetOf<IUser>() }
+    }
+
+    override fun getRoles(): MutableCollection<IRole>? = delegate { 
+        client { client!!.roles }
+        facade { mutableSetOf<IRole>() }
+    }
+
+    override fun getRoleByID(roleID: String?): IRole? = delegate { 
+        client { client!!.getRoleByID(roleID) }
         facade { null }
     }
 
