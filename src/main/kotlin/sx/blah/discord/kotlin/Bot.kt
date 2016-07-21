@@ -2,12 +2,16 @@ package sx.blah.discord.kotlin
 
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
+import sx.blah.discord.api.events.Event
 import sx.blah.discord.api.events.EventDispatcher
+import sx.blah.discord.api.events.IListener
 import sx.blah.discord.handle.obj.*
 import sx.blah.discord.modules.ModuleLoader
 import sx.blah.discord.util.Image
 import java.time.LocalDateTime
 import java.util.*
+import java.util.concurrent.TimeUnit
+import java.util.function.Predicate
 
 /**
  * This allows for a quick and easy setup for creating a bot.
@@ -206,7 +210,115 @@ class ClientFacade : IDiscordClient {
 
     override fun getDispatcher(): EventDispatcher? = delegate { 
         client { client!!.dispatcher }
-        facade { null }
+        facade { 
+            object: EventDispatcher(this@ClientFacade) {
+
+                override fun registerListener(listener: Any?) { 
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerListener(listener) }
+                    }
+                }
+
+                override fun registerListener(listener: Class<*>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerListener(listener) }
+                    }
+                }
+
+                override fun registerListener(listener: IListener<*>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerListener(listener) }
+                    }
+                }
+
+                override fun unregisterListener(listener: Any?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerListener(listener) }
+                    }
+                }
+
+                override fun unregisterListener(listener: IListener<*>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.unregisterListener(listener) }
+                    }
+                }
+
+                override fun dispatch(event: Event?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.dispatch(event) }
+                    }
+                }
+
+                override fun registerTemporaryListener(listener: Any?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerTemporaryListener(listener) }
+                    }
+                }
+
+                override fun registerTemporaryListener(listener: Class<*>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerTemporaryListener(listener) }
+                    }
+                }
+
+                override fun <T : Event?> registerTemporaryListener(listener: IListener<T>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.registerTemporaryListener(listener) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(eventClass: Class<T>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(eventClass) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(eventClass: Class<T>?, time: Long) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(eventClass, time) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(eventClass: Class<T>?, time: Long, unit: TimeUnit?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(eventClass, time, unit) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(filter: Predicate<T>?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(filter) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(filter: Predicate<T>?, time: Long) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(filter, time) }
+                    }
+                }
+
+                override fun <T : Event?> waitFor(filter: Predicate<T>?, time: Long, unit: TimeUnit?) {
+                    delegate<Unit> {
+                        clientOnly = true
+                        client { client!!.dispatcher.waitFor(filter, time, unit) }
+                    }
+                }
+            } 
+        }
     }
 
     override fun logout(): Unit {
